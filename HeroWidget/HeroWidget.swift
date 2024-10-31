@@ -1,0 +1,83 @@
+//
+//  HeroWidget.swift
+//  HeroWidget
+//
+//  Created by Eren Elçi on 31.10.2024.
+//
+
+import WidgetKit
+import SwiftUI
+
+struct Provider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> SimpleEntry {
+        SimpleEntry(date: Date(), configuration: ConfigurationAppIntent(), hero: Superhero(image: "batman", name: "Batman", realName: "Bruce Wayne"))
+    }
+
+    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
+        SimpleEntry(date: Date(), configuration: configuration, hero: Superhero(image: "batman", name: "Batman", realName: "Bruce Wayne"))
+    }
+    
+    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
+        var entries: [SimpleEntry] = []
+
+        // Generate a timeline consisting of five entries an hour apart, starting from the current date.
+        let currentDate = Date()
+        for hourOffset in 0 ..< 5 {
+            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
+            let entry = SimpleEntry(date: entryDate, configuration: configuration, hero: Superhero(image: "batman", name: "Batman", realName: "Bruce Wayne"))
+            entries.append(entry)
+        }
+
+        return Timeline(entries: entries, policy: .never)
+    }
+
+//    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {
+//        // Generate a list containing the contexts this widget is relevant in.
+//    }
+}
+
+struct SimpleEntry: TimelineEntry {
+    let date: Date
+    let configuration: ConfigurationAppIntent
+    let hero : Superhero
+}
+
+struct HeroWidgetEntryView : View {
+    var entry: Provider.Entry
+
+    var body: some View {
+        CircularImageView(image: Image(entry.hero.image))
+    }
+}
+
+struct HeroWidget: Widget {
+    let kind: String = "HeroWidget"
+
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: Provider()) { entry in
+            HeroWidgetEntryView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
+        }
+    }
+}
+
+extension ConfigurationAppIntent {
+    fileprivate static var smiley: ConfigurationAppIntent {
+        let intent = ConfigurationAppIntent()
+        intent.favoriteEmoji = "😀"
+        return intent
+    }
+    
+    fileprivate static var starEyes: ConfigurationAppIntent {
+        let intent = ConfigurationAppIntent()
+        intent.favoriteEmoji = "🤩"
+        return intent
+    }
+}
+
+#Preview(as: .systemSmall) {
+    HeroWidget()
+} timeline: {
+    SimpleEntry(date: .now, configuration: .smiley, hero: Superhero(image: "batman", name: "Batman", realName: "Bruce Wayne"))
+    SimpleEntry(date: .now, configuration: .starEyes, hero: Superhero(image: "batman", name: "Batman", realName: "Bruce Wayne"))
+}
